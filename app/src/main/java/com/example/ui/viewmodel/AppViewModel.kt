@@ -113,9 +113,12 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         viewModelScope.launch(Dispatchers.IO) {
             val defaultUser = repository.getUserByEmail("demo@enterprise.com")
             if (defaultUser == null) {
+                val salt = com.example.util.HashUtils.generateSalt()
+                val hashedPassword = com.example.util.HashUtils.hashPassword("password123", salt)
                 repository.insertUser(com.example.data.model.User(
                     email = "demo@enterprise.com",
-                    passwordHash = "password123",
+                    passwordHash = hashedPassword,
+                    salt = salt,
                     role = "System Analyst"
                 ))
             }
@@ -169,7 +172,16 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 _authError.value = "ไม่พบบัญชีผู้ใช้งานนี้ในระบบ โปรดสมัครสมาชิกใหม่"
                 return@launch
             }
-            if (user.passwordHash != passwordEntered) {
+
+            // Check if password matches (supporting fallback for older unhashed legacy entries)
+            val isMatch = if (user.salt.isEmpty()) {
+                user.passwordHash == passwordEntered
+            } else {
+                val hashedCompare = com.example.util.HashUtils.hashPassword(passwordEntered, user.salt)
+                user.passwordHash == hashedCompare
+            }
+
+            if (!isMatch) {
                 _authError.value = "รหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง"
                 return@launch
             }
@@ -199,9 +211,14 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 return@launch
             }
 
+            // Secure Hashing with dynamic salt per user
+            val salt = com.example.util.HashUtils.generateSalt()
+            val hashedPassword = com.example.util.HashUtils.hashPassword(passwordEntered, salt)
+
             val newUser = com.example.data.model.User(
                 email = emailClean,
-                passwordHash = passwordEntered,
+                passwordHash = hashedPassword,
+                salt = salt,
                 role = role
             )
             val result = repository.insertUser(newUser)

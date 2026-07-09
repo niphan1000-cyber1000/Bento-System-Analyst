@@ -8,6 +8,7 @@ data class User(
     @PrimaryKey
     val email: String,
     val passwordHash: String,
+    val salt: String = "",
     val role: String = "System Analyst",
     val createdAt: Long = System.currentTimeMillis()
 )
