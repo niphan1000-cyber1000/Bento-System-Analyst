@@ -1,0 +1,6 @@
+{
+  "name": "AI System Analyst",
+  "description": "Enterprise AI System Analyst Platform for complete analysis, diagram generation, business workflows, and interactive dashboards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
