@@ -85,6 +85,8 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     ))
     val notifications: StateFlow<List<String>> = _notifications.asStateFlow()
 
+    val isApiKeyAvailable: Boolean = GeminiApiClient.isApiKeyAvailable()
+
     init {
         val database = AppDatabase.getDatabase(application)
         repository = ProjectRepository(database.projectDao())

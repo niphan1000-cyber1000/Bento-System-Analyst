@@ -4,6 +4,7 @@ import android.util.Log
 import com.example.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.delay
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
 import okhttp3.Request
@@ -17,10 +18,15 @@ object GeminiApiClient {
     private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
     private val client = OkHttpClient.Builder()
-        .connectTimeout(60, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
-        .writeTimeout(60, TimeUnit.SECONDS)
+        .connectTimeout(20, TimeUnit.SECONDS)
+        .readTimeout(20, TimeUnit.SECONDS)
+        .writeTimeout(20, TimeUnit.SECONDS)
         .build()
+
+    fun isApiKeyAvailable(): Boolean {
+        val apiKey = BuildConfig.GEMINI_API_KEY
+        return apiKey.isNotEmpty() && apiKey != "MY_GEMINI_API_KEY"
+    }
 
     suspend fun generateAnalysis(
         rawContent: String,
@@ -69,38 +75,61 @@ object GeminiApiClient {
                 .post(requestBody)
                 .build()
 
-            client.newCall(request).execute().use { response ->
-                if (!response.isSuccessful) {
-                    val errorBody = response.body?.string() ?: ""
-                    Log.e(TAG, "Unsuccessful response from Gemini: Code ${response.code}, Error: $errorBody")
-                    return@withContext "Error: Failed to fetch analysis from AI model (HTTP ${response.code}).\n$errorBody"
+            val textResult = retryWithBackoff(times = 3) {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        val errorBody = response.body?.string() ?: ""
+                        Log.e(TAG, "Unsuccessful response from Gemini: Code ${response.code}, Error: $errorBody")
+                        throw Exception("HTTP ${response.code}: $errorBody")
+                    }
+
+                    val responseBodyStr = response.body?.string()
+                    if (responseBodyStr.isNullOrEmpty()) {
+                        throw Exception("Empty response from AI")
+                    }
+
+                    val responseJson = JSONObject(responseBodyStr)
+                    val candidates = responseJson.optJSONArray("candidates")
+                    if (candidates == null || candidates.length() == 0) {
+                        throw Exception("No candidates returned in AI response")
+                    }
+
+                    val content = candidates.getJSONObject(0).optJSONObject("content")
+                    val parts = content?.optJSONArray("parts")
+                    val text = parts?.optJSONObject(0)?.optString("text")
+
+                    if (text.isNullOrEmpty()) {
+                        throw Exception("No text content found in AI response")
+                    }
+
+                    text
                 }
-
-                val responseBodyStr = response.body?.string()
-                if (responseBodyStr.isNullOrEmpty()) {
-                    return@withContext "Error: Empty response from AI."
-                }
-
-                val responseJson = JSONObject(responseBodyStr)
-                val candidates = responseJson.optJSONArray("candidates")
-                if (candidates == null || candidates.length() == 0) {
-                    return@withContext "Error: No candidates returned in AI response."
-                }
-
-                val content = candidates.getJSONObject(0).optJSONObject("content")
-                val parts = content?.optJSONArray("parts")
-                val text = parts?.optJSONObject(0)?.optString("text")
-
-                if (text.isNullOrEmpty()) {
-                    return@withContext "Error: No text content found in AI response."
-                }
-
-                return@withContext text
             }
+            return@withContext textResult
         } catch (e: Exception) {
-            Log.e(TAG, "Exception during Gemini API call: ", e)
+            Log.e(TAG, "Exception during Gemini API call after retries: ", e)
             return@withContext "Error while contacting AI: ${e.message}\nRunning local fallback analyzer."
         }
+    }
+
+    private suspend fun <T> retryWithBackoff(
+        times: Int = 3,
+        initialDelay: Long = 1000,
+        maxDelay: Long = 6000,
+        factor: Double = 2.0,
+        block: suspend () -> T
+    ): T {
+        var currentDelay = initialDelay
+        repeat(times - 1) { attempt ->
+            try {
+                return block()
+            } catch (e: Exception) {
+                Log.e(TAG, "Attempt ${attempt + 1} failed: ${e.message}. Retrying in ${currentDelay}ms...")
+                delay(currentDelay)
+                currentDelay = (currentDelay * factor).toLong().coerceAtMost(maxDelay)
+            }
+        }
+        return block()
     }
 
     private fun buildPromptForCategory(

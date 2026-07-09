@@ -222,21 +222,63 @@ fun AppMainLayout(viewModel: AppViewModel, currentScreen: Screen) {
                             }
                         },
                         actions = {
-                            // Quick badge/bell for roles indicator
-                            Box(
-                                modifier = Modifier
-                                    .padding(end = 16.dp)
-                                    .border(1.dp, PrimaryLightBlue, CircleShape)
-                                    .clickable { viewModel.navigateTo(Screen.UserRoles) }
-                                    .padding(horizontal = 10.dp, vertical = 4.dp),
-                                contentAlignment = Alignment.Center
+                            Row(
+                                modifier = Modifier.padding(end = 16.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
-                                Text(
-                                    text = activeRole.take(5) + "..",
-                                    fontSize = 10.sp,
-                                    color = PrimaryLightBlue,
-                                    fontWeight = FontWeight.Bold
-                                )
+                                // API status indicator badge
+                                val isApiAvailable = viewModel.isApiKeyAvailable
+                                Box(
+                                    modifier = Modifier
+                                        .background(
+                                            if (isApiAvailable) Color(0xFF103A2B) else Color(0xFF3E2B1F),
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .border(
+                                            1.dp,
+                                            if (isApiAvailable) Color(0xFF2E7D32) else Color(0xFFEF6C00),
+                                            RoundedCornerShape(8.dp)
+                                        )
+                                        .padding(horizontal = 8.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Row(
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.spacedBy(4.dp)
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(6.dp)
+                                                .background(
+                                                    if (isApiAvailable) Color(0xFF4CAF50) else Color(0xFFFF9800),
+                                                    CircleShape
+                                                )
+                                        )
+                                        Text(
+                                            text = if (isApiAvailable) "LIVE AI" else "MOCK AI",
+                                            fontSize = 9.sp,
+                                            color = if (isApiAvailable) Color(0xFF81C784) else Color(0xFFFFB74D),
+                                            fontWeight = FontWeight.Bold
+                                        )
+                                    }
+                                }
+
+                                // Role badge
+                                Box(
+                                    modifier = Modifier
+                                        .border(1.dp, PrimaryLightBlue, CircleShape)
+                                        .clickable { viewModel.navigateTo(Screen.UserRoles) }
+                                        .padding(horizontal = 10.dp, vertical = 4.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = activeRole.take(5) + "..",
+                                        fontSize = 10.sp,
+                                        color = PrimaryLightBlue,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                }
                             }
                         },
                         colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
