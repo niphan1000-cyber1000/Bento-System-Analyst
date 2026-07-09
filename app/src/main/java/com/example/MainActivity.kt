@@ -31,6 +31,7 @@ import com.example.ui.theme.*
 import com.example.ui.viewmodel.AppViewModel
 import com.example.ui.viewmodel.Screen
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.koinViewModel
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,7 +40,7 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             MyApplicationTheme {
-                val viewModel: AppViewModel by viewModels()
+                val viewModel: AppViewModel = koinViewModel()
                 val isLoggedIn by viewModel.isLoggedIn.collectAsState()
                 val currentScreen by viewModel.currentScreen.collectAsState()
 

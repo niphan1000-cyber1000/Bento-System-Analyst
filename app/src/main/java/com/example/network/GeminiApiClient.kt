@@ -19,6 +19,12 @@ object GeminiApiClient {
     private const val TAG = "GeminiApiClient"
     private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
+    @Volatile
+    var enterpriseGatewayUrl: String = "https://gateway.enterprise-analyst.ai/v1/analyze"
+
+    @Volatile
+    var useEnterpriseGateway: Boolean = false
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
         .readTimeout(20, TimeUnit.SECONDS)
@@ -36,6 +42,63 @@ object GeminiApiClient {
     }
 
     suspend fun generateAnalysis(
+        rawContent: String,
+        category: String,
+        projectName: String,
+        industry: String
+    ): String = withContext(Dispatchers.IO) {
+        if (useEnterpriseGateway) {
+            return@withContext generateAnalysisViaGateway(rawContent, category, projectName, industry)
+        }
+        return@withContext generateAnalysisDirect(rawContent, category, projectName, industry)
+    }
+
+    suspend fun generateAnalysisViaGateway(
+        rawContent: String,
+        category: String,
+        projectName: String,
+        industry: String
+    ): String = withContext(Dispatchers.IO) {
+        try {
+            val payload = JSONObject().apply {
+                put("category", category)
+                put("rawContent", rawContent)
+                put("projectName", projectName)
+                put("industry", industry)
+                put("systemInstruction", "You are an elite enterprise software architect, system analyst, and security officer. Write a professional, detailed, structured analysis in Thai.")
+            }
+            val mediaType = "application/json; charset=utf-8".toMediaType()
+            val requestBody = payload.toString().toRequestBody(mediaType)
+            val request = Request.Builder()
+                .url(enterpriseGatewayUrl)
+                .post(requestBody)
+                // In production, attach secure enterprise client token
+                .addHeader("Authorization", "Bearer eYJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.enterpriseMockToken")
+                .build()
+
+            val textResult = retryWithBackoff(times = 2) {
+                client.newCall(request).execute().use { response ->
+                    if (!response.isSuccessful) {
+                        throw Exception("Gateway HTTP Error ${response.code}")
+                    }
+                    val body = response.body?.string() ?: ""
+                    if (body.startsWith("{")) {
+                        val json = JSONObject(body)
+                        json.optString("analysis", json.optString("text", body))
+                    } else {
+                        body
+                    }
+                }
+            }
+            return@withContext "Enterprise Secure Proxy Active: Dispatched through $enterpriseGatewayUrl\n\n$textResult"
+        } catch (e: Exception) {
+            Log.e(TAG, "Gateway analysis call failed, running local secure processing instead", e)
+            return@withContext "Enterprise secure gateway proxy ($enterpriseGatewayUrl) is currently unreachable in sandbox. Running secure direct failover below...\n\n" +
+                    generateAnalysisDirect(rawContent, category, projectName, industry)
+        }
+    }
+
+    suspend fun generateAnalysisDirect(
         rawContent: String,
         category: String,
         projectName: String,

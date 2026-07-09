@@ -33,11 +33,29 @@ data class ChatMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
-class AppViewModel(application: Application) : AndroidViewModel(application) {
+class AppViewModel(
+    application: Application,
+    private val repository: ProjectRepository,
+    private val crashService: com.example.util.CrashMonitoringService
+) : AndroidViewModel(application) {
 
-    private val repository: ProjectRepository
     val projects: StateFlow<List<Project>>
     val auditLogs: StateFlow<List<AuditLog>>
+
+    // Uncaught Crash Monitoring & App Telemetry Status Flows
+    val systemCrashes: StateFlow<List<com.example.util.CrashLog>> = crashService.crashes
+    val performanceMetrics: StateFlow<com.example.util.PerformanceMetrics> = crashService.performanceMetrics
+
+    fun clearCrashReports() {
+        crashService.clearCrashes()
+        logActivity("Security Maintenance", "ล้างบันทึกประวัติการแครชของระบบทั้งหมด")
+    }
+
+    fun triggerSimulatedCrash(message: String) {
+        val ex = RuntimeException("Simulated Sandbox Crash: $message")
+        crashService.logCrash(ex)
+        logActivity("System Monitor", "จำลองการเกิดบั๊ก / Exception: ${ex.message}")
+    }
 
     // Navigation and Active Selection
     private val _currentScreen = MutableStateFlow<Screen>(Screen.Login)
@@ -72,6 +90,29 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _analysisStatus = MutableStateFlow<Map<String, String>>(emptyMap()) // Category -> Status ("Idle", "Running", "Completed", "Failed")
     val analysisStatus: StateFlow<Map<String, String>> = _analysisStatus.asStateFlow()
 
+    // Secure Enterprise Gateway Proxy routing state
+    private val _useEnterpriseGateway = MutableStateFlow(GeminiApiClient.useEnterpriseGateway)
+    val useEnterpriseGateway: StateFlow<Boolean> = _useEnterpriseGateway.asStateFlow()
+
+    private val _enterpriseGatewayUrl = MutableStateFlow(GeminiApiClient.enterpriseGatewayUrl)
+    val enterpriseGatewayUrl: StateFlow<String> = _enterpriseGatewayUrl.asStateFlow()
+
+    fun setUseEnterpriseGateway(enabled: Boolean) {
+        _useEnterpriseGateway.value = enabled
+        GeminiApiClient.useEnterpriseGateway = enabled
+        viewModelScope.launch {
+            logActivity("Security Configuration", "เปลี่ยนโหมดเส้นทาง AI: " + if (enabled) "เซิร์ฟเวอร์เกตเวย์องค์กร (Secure Backend Proxy)" else "เชื่อมตรงผ่านโมเดล Client SDK")
+        }
+    }
+
+    fun setEnterpriseGatewayUrl(url: String) {
+        val trimmed = url.trim()
+        if (trimmed.isNotEmpty()) {
+            _enterpriseGatewayUrl.value = trimmed
+            GeminiApiClient.enterpriseGatewayUrl = trimmed
+        }
+    }
+
     // Auth & Role Simulation State
     private val _userRole = MutableStateFlow("System Analyst") // "Admin", "Manager", "System Analyst", "Developer", "QA", "Viewer"
     val userRole: StateFlow<String> = _userRole.asStateFlow()
@@ -96,8 +137,6 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     val isApiKeyAvailable: Boolean = GeminiApiClient.isApiKeyAvailable()
 
     init {
-        val database = AppDatabase.getDatabase(application)
-        repository = ProjectRepository(database.projectDao())
         projects = repository.allProjects.stateIn(
             viewModelScope,
             SharingStarted.WhileSubscribed(5000),

@@ -208,6 +208,106 @@ fun DashboardScreen(viewModel: AppViewModel, paddingValues: PaddingValues) {
             }
         }
 
+        // Enterprise AI Security & Gateway Routing Configurator Card
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            val useEnterpriseGateway by viewModel.useEnterpriseGateway.collectAsState()
+            val enterpriseGatewayUrl by viewModel.enterpriseGatewayUrl.collectAsState()
+            var gatewayInput by remember(enterpriseGatewayUrl) { mutableStateOf(enterpriseGatewayUrl) }
+
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .border(1.dp, if (useEnterpriseGateway) BentoIndigo else BentoCardBorder, RoundedCornerShape(20.dp)),
+                colors = CardDefaults.cardColors(containerColor = BentoCardBg),
+                shape = RoundedCornerShape(20.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                imageVector = if (useEnterpriseGateway) Icons.Default.Shield else Icons.Default.CloudQueue,
+                                contentDescription = null,
+                                tint = if (useEnterpriseGateway) AccentEmerald else PrimaryLightBlue,
+                                modifier = Modifier.size(24.dp)
+                            )
+                            Spacer(modifier = Modifier.width(12.dp))
+                            Column {
+                                Text(
+                                    text = "เส้นทางการเรียก AI (Enterprise Routing)",
+                                    fontSize = 15.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Color.White
+                                )
+                                Text(
+                                    text = if (useEnterpriseGateway) "เกตเวย์องค์กร (Secure Backend Proxy)" else "เชื่อมตรง (Client-to-Gemini SDK Prototyping)",
+                                    fontSize = 12.sp,
+                                    color = if (useEnterpriseGateway) AccentEmerald else Slate500
+                                )
+                            }
+                        }
+                        
+                        Switch(
+                            checked = useEnterpriseGateway,
+                            onCheckedChange = { viewModel.setUseEnterpriseGateway(it) },
+                            colors = SwitchDefaults.colors(
+                                checkedThumbColor = Color.White,
+                                checkedTrackColor = AccentIndigo,
+                                uncheckedThumbColor = Slate500,
+                                uncheckedTrackColor = Slate800
+                            )
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    if (useEnterpriseGateway) {
+                        Text(
+                            text = "ความปลอดภัยระดับสูง: คีย์ API จะถูกเก็บรักษาไว้อย่างปลอดภัยบนฝั่งเซิร์ฟเวอร์หลังบ้าน (FastAPI/Spring) ตัวแอปจะเรียก AI ผ่าน Gateway เท่านั้น",
+                            fontSize = 11.sp,
+                            color = Slate100,
+                            lineHeight = 16.sp
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            OutlinedTextField(
+                                value = gatewayInput,
+                                onValueChange = {
+                                    gatewayInput = it
+                                    viewModel.setEnterpriseGatewayUrl(it)
+                                },
+                                label = { Text("ที่อยู่ API Gateway (Backend URL)", fontSize = 11.sp) },
+                                singleLine = true,
+                                textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, color = Color.White),
+                                modifier = Modifier.weight(1f),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = PrimaryLightBlue,
+                                    unfocusedBorderColor = Slate700,
+                                    focusedLabelColor = PrimaryLightBlue,
+                                    unfocusedLabelColor = Slate500
+                                )
+                            )
+                        }
+                    } else {
+                        Text(
+                            text = "โหมดแซนด์บอกซ์ (Sandbox Prototyping): แอปพลิเคชันส่งคำขอไปยัง Gemini API โดยตรงผ่าน Client SDK (คีย์ API ถูกเก็บในแอสเซทจำลอง / ค่ากำหนดท้องถิ่น)",
+                            fontSize = 11.sp,
+                            color = Slate500,
+                            lineHeight = 16.sp
+                        )
+                    }
+                }
+            }
+        }
+
         // Dynamic KPI Card Grid for Selected Project
         item {
             Spacer(modifier = Modifier.height(24.dp))
