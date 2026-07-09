@@ -13,6 +13,8 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.util.concurrent.TimeUnit
 
+class UnretryableApiException(message: String) : Exception(message)
+
 object GeminiApiClient {
     private const val TAG = "GeminiApiClient"
     private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
@@ -23,6 +25,11 @@ object GeminiApiClient {
         .writeTimeout(20, TimeUnit.SECONDS)
         .build()
 
+    // NOTE: SECURITY DISCLAIMER FOR ENTERPRISE DEPLOYMENT
+    // Calling Gemini API directly from the client application with an API key embedded in the binary 
+    // is highly vulnerable to extraction via reverse engineering tools like JADX, Apktool, or dex2jar.
+    // For Production Deployment: The application MUST proxy all LLM and analysis requests through 
+    // a secure company gateway / backend microservice where credentials are kept hidden in secure env vaults.
     fun isApiKeyAvailable(): Boolean {
         val apiKey = BuildConfig.GEMINI_API_KEY
         return apiKey.isNotEmpty() && apiKey != "MY_GEMINI_API_KEY"
@@ -80,7 +87,14 @@ object GeminiApiClient {
                     if (!response.isSuccessful) {
                         val errorBody = response.body?.string() ?: ""
                         Log.e(TAG, "Unsuccessful response from Gemini: Code ${response.code}, Error: $errorBody")
-                        throw Exception("HTTP ${response.code}: $errorBody")
+                        val errorMsg = "HTTP ${response.code}: $errorBody"
+                        
+                        // Fail instantly on unretryable client-side HTTP status codes (e.g. 400 Bad Request, 401 Unauthorized)
+                        if (response.code in listOf(400, 401, 403, 404)) {
+                            throw UnretryableApiException(errorMsg)
+                        } else {
+                            throw Exception(errorMsg)
+                        }
                     }
 
                     val responseBodyStr = response.body?.string()
@@ -108,7 +122,12 @@ object GeminiApiClient {
             return@withContext textResult
         } catch (e: Exception) {
             Log.e(TAG, "Exception during Gemini API call after retries: ", e)
-            return@withContext "Error while contacting AI: ${e.message}\nRunning local fallback analyzer."
+            val cleanMessage = if (e is UnretryableApiException) {
+                "Client-side API Error: ${e.message} (Skipped retrying because this error is non-recoverable)"
+            } else {
+                e.message
+            }
+            return@withContext "Error while contacting AI: $cleanMessage\nRunning local fallback analyzer."
         }
     }
 
@@ -123,6 +142,9 @@ object GeminiApiClient {
         repeat(times - 1) { attempt ->
             try {
                 return block()
+            } catch (e: UnretryableApiException) {
+                // Instantly propagate non-retryable client API exceptions
+                throw e
             } catch (e: Exception) {
                 Log.e(TAG, "Attempt ${attempt + 1} failed: ${e.message}. Retrying in ${currentDelay}ms...")
                 delay(currentDelay)

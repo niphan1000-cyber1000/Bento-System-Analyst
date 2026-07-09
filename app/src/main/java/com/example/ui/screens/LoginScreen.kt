@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
@@ -19,7 +20,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -28,7 +28,6 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.R
 import com.example.ui.theme.*
 import com.example.ui.viewmodel.AppViewModel
 
@@ -40,6 +39,14 @@ fun LoginScreen(viewModel: AppViewModel) {
     var isRegisterMode by remember { mutableStateOf(false) }
     var isForgotPasswordMode by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }
+
+    // Observe real authentication states
+    val authError by viewModel.authError.collectAsState()
+    val registerSuccess by viewModel.registerSuccess.collectAsState()
+
+    // Available roles to choose from when registering
+    val roles = listOf("System Analyst", "Admin", "Project Manager", "Developer", "QA", "Viewer")
+    var selectedRole by remember { mutableStateOf("System Analyst") }
 
     Box(
         modifier = Modifier
@@ -77,7 +84,7 @@ fun LoginScreen(viewModel: AppViewModel) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(32.dp),
+                    .padding(28.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 // Enterprise Header Brand
@@ -107,9 +114,49 @@ fun LoginScreen(viewModel: AppViewModel) {
                     fontSize = 12.sp,
                     color = Slate500,
                     fontWeight = FontWeight.Medium,
-                    modifier = Modifier.padding(bottom = 28.dp),
+                    modifier = Modifier.padding(bottom = 20.dp),
                     textAlign = TextAlign.Center
                 )
+
+                // Error Banner
+                if (authError != null) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                            .background(Color(0xFF3E1F1F), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFFC62828), RoundedCornerShape(12.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = authError ?: "",
+                            color = Color(0xFFFFCDD2),
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
+
+                // Success Banner
+                if (registerSuccess && isRegisterMode) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(bottom = 16.dp)
+                            .background(Color(0xFF1B3B2B), RoundedCornerShape(12.dp))
+                            .border(1.dp, Color(0xFF2E7D32), RoundedCornerShape(12.dp))
+                            .padding(12.dp)
+                    ) {
+                        Text(
+                            text = "ลงทะเบียนบัญชีสำเร็จแล้ว! กรุณาสลับหน้าจอเพื่อเข้าสู่ระบบ",
+                            color = Color(0xFFA5D6A7),
+                            fontSize = 13.sp,
+                            textAlign = TextAlign.Center,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    }
+                }
 
                 AnimatedContent(
                     targetState = when {
@@ -190,7 +237,7 @@ fun LoginScreen(viewModel: AppViewModel) {
                                 Spacer(modifier = Modifier.height(24.dp))
 
                                 Button(
-                                    onClick = { viewModel.login(email.ifEmpty { "demo@enterprise.com" }) },
+                                    onClick = { viewModel.login(email.ifEmpty { "demo@enterprise.com" }, password.ifEmpty { "password123" }) },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(50.dp)
@@ -230,7 +277,7 @@ fun LoginScreen(viewModel: AppViewModel) {
                                     visualTransformation = PasswordVisualTransformation(),
                                     modifier = Modifier
                                         .fillMaxWidth()
-                                        .padding(bottom = 24.dp),
+                                        .padding(bottom = 16.dp),
                                     shape = RoundedCornerShape(12.dp),
                                     colors = OutlinedTextFieldDefaults.colors(
                                         focusedTextColor = Color.White,
@@ -238,8 +285,46 @@ fun LoginScreen(viewModel: AppViewModel) {
                                     )
                                 )
 
+                                Text(
+                                    text = "เลือกบทบาทในการทำงาน (User Role):",
+                                    color = Slate500,
+                                    fontSize = 12.sp,
+                                    modifier = Modifier.padding(bottom = 8.dp)
+                                )
+
+                                androidx.compose.foundation.lazy.LazyRow(
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(bottom = 24.dp)
+                                ) {
+                                    items(roles.size) { index ->
+                                        val roleOption = roles[index]
+                                        val isSelected = selectedRole == roleOption
+                                        Box(
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(20.dp))
+                                                .background(if (isSelected) AccentIndigo else Slate800)
+                                                .clickable { selectedRole = roleOption }
+                                                .border(
+                                                    1.dp,
+                                                    if (isSelected) Color.White else Color.Transparent,
+                                                    RoundedCornerShape(20.dp)
+                                                )
+                                                .padding(horizontal = 14.dp, vertical = 6.dp)
+                                        ) {
+                                            Text(
+                                                text = roleOption,
+                                                color = if (isSelected) Color.White else Slate100,
+                                                fontSize = 12.sp,
+                                                fontWeight = FontWeight.Bold
+                                            )
+                                        }
+                                    }
+                                }
+
                                 Button(
-                                    onClick = { isRegisterMode = false },
+                                    onClick = { viewModel.register(email, password, selectedRole) },
                                     modifier = Modifier
                                         .fillMaxWidth()
                                         .height(50.dp),
@@ -292,7 +377,7 @@ fun LoginScreen(viewModel: AppViewModel) {
 
                 Spacer(modifier = Modifier.height(20.dp))
 
-                // Bottom Switch Links & Social
+                // Bottom Switch Links
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.Center,
@@ -310,7 +395,10 @@ fun LoginScreen(viewModel: AppViewModel) {
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             modifier = Modifier
-                                .clickable { isRegisterMode = !isRegisterMode }
+                                .clickable {
+                                    viewModel.clearAuthStates()
+                                    isRegisterMode = !isRegisterMode
+                                }
                                 .padding(vertical = 4.dp)
                         )
                     } else {
@@ -320,7 +408,10 @@ fun LoginScreen(viewModel: AppViewModel) {
                             fontWeight = FontWeight.Bold,
                             fontSize = 13.sp,
                             modifier = Modifier
-                                .clickable { isForgotPasswordMode = false }
+                                .clickable {
+                                    viewModel.clearAuthStates()
+                                    isForgotPasswordMode = false
+                                }
                                 .padding(vertical = 4.dp)
                         )
                     }
@@ -334,7 +425,7 @@ fun LoginScreen(viewModel: AppViewModel) {
 
                 // Google OAuth Simulated Login
                 OutlinedButton(
-                    onClick = { viewModel.login("oauth.google@enterprise.com") },
+                    onClick = { viewModel.login("demo@enterprise.com", "password123") },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -349,14 +440,9 @@ fun LoginScreen(viewModel: AppViewModel) {
                         modifier = Modifier.size(20.dp)
                     )
                     Spacer(modifier = Modifier.width(10.dp))
-                    Text("เข้าสู่ระบบผ่าน Google Workspace", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                    Text("เข้าสู่ระบบผ่าน Google Workspace (Demo)", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
                 }
             }
         }
     }
-}
-
-// Helper for dynamic flow state
-fun <T> mutableStateFlowOf(value: T): MutableState<T> {
-    return mutableStateOf(value)
 }

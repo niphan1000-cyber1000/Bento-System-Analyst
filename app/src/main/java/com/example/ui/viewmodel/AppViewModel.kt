@@ -14,6 +14,7 @@ import com.example.network.GeminiApiClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 sealed class Screen {
     object Login : Screen()
@@ -78,6 +79,13 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
     private val _isLoggedIn = MutableStateFlow(false)
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn.asStateFlow()
 
+    // Auth error and success states for real authentication
+    private val _authError = MutableStateFlow<String?>(null)
+    val authError: StateFlow<String?> = _authError.asStateFlow()
+
+    private val _registerSuccess = MutableStateFlow<Boolean>(false)
+    val registerSuccess: StateFlow<Boolean> = _registerSuccess.asStateFlow()
+
     // Quick Notifications
     private val _notifications = MutableStateFlow<List<String>>(listOf(
         "ยินดีต้อนรับเข้าสู่ระบบวิเคราะห์ Enterprise AI Analyst Platform",
@@ -101,8 +109,17 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
             emptyList()
         )
 
-        // Seed initial project data if empty
+        // Seed initial project and user data if empty
         viewModelScope.launch(Dispatchers.IO) {
+            val defaultUser = repository.getUserByEmail("demo@enterprise.com")
+            if (defaultUser == null) {
+                repository.insertUser(com.example.data.model.User(
+                    email = "demo@enterprise.com",
+                    passwordHash = "password123",
+                    role = "System Analyst"
+                ))
+            }
+
             projects.take(2).collect { list ->
                 if (list.isEmpty()) {
                     seedDefaultProjects()
@@ -135,13 +152,73 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun login(email: String) {
-        viewModelScope.launch {
-            _isLoggedIn.value = true
-            _currentScreen.value = Screen.Dashboard
-            logActivity("Login", "เข้าสู่ระบบสำเร็จด้วยบัญชี $email")
-            addNotification("เข้าสู่ระบบเรียบร้อยแล้ว ยินดีต้อนรับคุณ $email")
+    fun login(email: String, passwordEntered: String) {
+        viewModelScope.launch(Dispatchers.IO) {
+            _authError.value = null
+            val emailClean = email.trim()
+            if (emailClean.isEmpty()) {
+                _authError.value = "โปรดกรอกอีเมลผู้ใช้งาน"
+                return@launch
+            }
+            if (passwordEntered.isEmpty()) {
+                _authError.value = "โปรดกรอกรหัสผ่าน"
+                return@launch
+            }
+            val user = repository.getUserByEmail(emailClean)
+            if (user == null) {
+                _authError.value = "ไม่พบบัญชีผู้ใช้งานนี้ในระบบ โปรดสมัครสมาชิกใหม่"
+                return@launch
+            }
+            if (user.passwordHash != passwordEntered) {
+                _authError.value = "รหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง"
+                return@launch
+            }
+
+            withContext(Dispatchers.Main) {
+                _userRole.value = user.role
+                _isLoggedIn.value = true
+                _currentScreen.value = Screen.Dashboard
+                logActivity("Login", "เข้าสู่ระบบสำเร็จด้วยบัญชี ${user.email} (สิทธิ์: ${user.role})")
+                addNotification("เข้าสู่ระบบเรียบร้อยแล้ว ยินดีต้อนรับคุณ ${user.email}")
+            }
         }
+    }
+
+    fun register(email: String, passwordEntered: String, role: String = "System Analyst") {
+        viewModelScope.launch(Dispatchers.IO) {
+            _authError.value = null
+            _registerSuccess.value = false
+            val emailClean = email.trim()
+            if (emailClean.isEmpty() || passwordEntered.isEmpty()) {
+                _authError.value = "โปรดกรอกข้อมูลอีเมลและรหัสผ่านให้ครบถ้วน"
+                return@launch
+            }
+            val existing = repository.getUserByEmail(emailClean)
+            if (existing != null) {
+                _authError.value = "อีเมลนี้ได้รับการลงทะเบียนแล้ว ไม่สามารถใช้ซ้ำได้"
+                return@launch
+            }
+
+            val newUser = com.example.data.model.User(
+                email = emailClean,
+                passwordHash = passwordEntered,
+                role = role
+            )
+            val result = repository.insertUser(newUser)
+            if (result > -1) {
+                _registerSuccess.value = true
+                _authError.value = null
+                logActivity("User Register", "ลงทะเบียนบัญชีใหม่สำเร็จ: $emailClean")
+                addNotification("ลงทะเบียนสมัครสมาชิกสำเร็จ: $emailClean")
+            } else {
+                _authError.value = "เกิดข้อผิดพลาดในการบันทึกข้อมูลผู้ใช้งาน"
+            }
+        }
+    }
+
+    fun clearAuthStates() {
+        _authError.value = null
+        _registerSuccess.value = false
     }
 
     fun logout() {

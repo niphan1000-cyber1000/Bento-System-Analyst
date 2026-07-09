@@ -67,4 +67,12 @@ class ProjectRepository(private val projectDao: ProjectDao) {
     suspend fun insertAuditLog(auditLog: AuditLog) {
         projectDao.insertAuditLog(auditLog)
     }
+
+    suspend fun getUserByEmail(email: String): com.example.data.model.User? {
+        return projectDao.getUserByEmail(email)
+    }
+
+    suspend fun insertUser(user: com.example.data.model.User): Long {
+        return projectDao.insertUser(user)
+    }
 }
