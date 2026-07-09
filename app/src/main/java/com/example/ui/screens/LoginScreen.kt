@@ -35,8 +35,8 @@ import com.example.ui.viewmodel.AppViewModel
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LoginScreen(viewModel: AppViewModel) {
-    var email by remember { mutableStateFlowOf("") }
-    var password by remember { mutableStateFlowOf("") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var isRegisterMode by remember { mutableStateOf(false) }
     var isForgotPasswordMode by remember { mutableStateOf(false) }
     var passwordVisible by remember { mutableStateOf(false) }

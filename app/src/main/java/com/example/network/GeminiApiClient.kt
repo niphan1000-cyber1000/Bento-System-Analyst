@@ -14,7 +14,7 @@ import java.util.concurrent.TimeUnit
 
 object GeminiApiClient {
     private const val TAG = "GeminiApiClient"
-    private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent"
+    private const val BASE_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(60, TimeUnit.SECONDS)
@@ -31,7 +31,7 @@ object GeminiApiClient {
         val apiKey = BuildConfig.GEMINI_API_KEY
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
             Log.e(TAG, "API Key is empty or placeholder!")
-            return@withContext getOfflineMockAnalysis(category, projectName, industry)
+            return@withContext getOfflineMockAnalysis(category, projectName, industry, rawContent)
         }
 
         val prompt = buildPromptForCategory(category, rawContent, projectName, industry)
@@ -233,12 +233,64 @@ object GeminiApiClient {
                 Format beautifully in Thai.
             """.trimIndent()
 
+            "Chat" -> rawContent
+
             else -> "Analyze the system details of '$projectName': $rawContent"
         }
     }
 
-    private fun getOfflineMockAnalysis(category: String, projectName: String, industry: String): String {
+    private fun getOfflineMockAnalysis(category: String, projectName: String, industry: String, rawContent: String = ""): String {
         return when (category) {
+            "Chat" -> {
+                val question = if (rawContent.contains("User Question:")) {
+                    rawContent.substringAfter("User Question:").trim()
+                } else {
+                    "คำถามของคุณ"
+                }
+                
+                val lowerQuestion = question.lowercase()
+                val responseDetails = when {
+                    lowerQuestion.contains("database") || lowerQuestion.contains("db") || lowerQuestion.contains("ฐานข้อมูล") || lowerQuestion.contains("table") -> """
+                        - **การออกแบบฐานข้อมูล**: แนะนำใช้ PostgreSQL ร่วมกับ Room Database สำหรับฝั่ง Client ครับ
+                        - **โครงสร้าง**: มีการจัดเก็บแยกตารางระหว่าง Projects, Tasks, Risks และ Audit Logs อย่างชัดเจน
+                        - **ข้อเสนอแนะ**: ควรเพิ่มดัชนี (Index) บนคอลัมน์ที่มีการสืบค้นบ่อย ๆ เช่น `projectId`
+                    """.trimIndent()
+                    
+                    lowerQuestion.contains("security") || lowerQuestion.contains("ปลอดภัย") || lowerQuestion.contains("สิทธิ์") || lowerQuestion.contains("key") -> """
+                        - **ความปลอดภัย**: ตัวแอปใช้ระบบควบคุมสิทธิ์แบบ Role-Based Access Control (RBAC)
+                        - **การคุ้มครองข้อมูล**: ควรหลีกเลี่ยงการฝัง API key ไว้ในแอปโดยตรง และเลือกใช้ Firebase AI SDK หรือสถาปัตยกรรม Proxy Server แทนครับ
+                        - **สิทธิ์การทำงาน**: จำกัดสิทธิ์การเขียน/ลบตามตำแหน่ง (Admin, SA, PM)
+                    """.trimIndent()
+
+                    lowerQuestion.contains("performance") || lowerQuestion.contains("ช้า") || lowerQuestion.contains("เร็ว") || lowerQuestion.contains("cache") -> """
+                        - **การตอบสนอง**: โค้ดถูกออกแบบให้ใช้ Kotlin Coroutines และ Flow เพื่อหลีกเลี่ยงการบล็อก UI thread
+                        - **การปรับแต่ง**: แนะนำให้ตั้งค่า caching ด้วย Redis ฝั่งเซิร์ฟเวอร์ และจัดทำ Pagination ของประวัติกิจกรรมย้อนหลัง
+                    """.trimIndent()
+
+                    lowerQuestion.contains("api") || lowerQuestion.contains("endpoint") || lowerQuestion.contains("rest") -> """
+                        - **ระบบ APIs**: ควรมี Endpoints มาตรฐานสำหรับระบบนี้ เช่น `/api/v1/projects`, `/api/v1/tasks`
+                        - **ความปลอดภัย**: แนะนำใช้ Bearer JWT ในการยืนยันตัวตนสำหรับทุก ๆ API Call
+                    """.trimIndent()
+
+                    else -> """
+                        - **สถาปัตยกรรมแอปพลิเคชัน**: โครงสร้างได้รับการออกแบบตามรูปแบบ Bento Grid ที่จัดสรรข้อมูลเป็นบล็อกสวยงามและเข้าใจง่าย
+                        - **ข้อแนะนำ**: คุณสามารถเลือกหัวข้อที่ต้องการจากแท็บวิเคราะห์เพื่อสร้างรายละเอียดวิเคราะห์ทั้ง 10 มิติเชิงลึกได้เลยครับ
+                    """.trimIndent()
+                }
+
+                """
+                    ### 💬 ผู้ช่วยวิเคราะห์สถาปัตยกรรมระบบ AI (โหมดจำลองออฟไลน์)
+                    *หมายเหตุ: ตอบกลับในโหมดออฟไลน์เนื่องจากไม่ได้ตั้งค่า API Key*
+                    
+                    **คำถามของคุณ:** "$question"
+                    
+                    **คำแนะนำจากผู้ช่วยสถาปนิกซอฟต์แวร์:**
+                    $responseDetails
+                    
+                    มีเรื่องอื่น ๆ เกี่ยวกับโครงสร้างโครงการ **$projectName** ($industry) ที่ต้องการให้ผมช่วยเหลือเพิ่มเติมไหมครับ?
+                """.trimIndent()
+            }
+
             "Requirements" -> """
                 ### 📋 ผลการวิเคราะห์ Requirements สำหรับ $projectName ($industry)
                 *หมายเหตุ: ทำงานในโหมดออฟไลน์เนื่องจากไม่ได้ใส่ API Key*

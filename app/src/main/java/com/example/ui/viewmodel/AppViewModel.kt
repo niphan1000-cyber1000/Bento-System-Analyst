@@ -300,13 +300,15 @@ class AppViewModel(application: Application) : AndroidViewModel(application) {
                 Industry: ${currentProject.industry}
                 Description: ${currentProject.description}
                 
-                Please reply in Thai, using markdown format, with structured bullets, tables, or ASCII diagrams if requested.
-                Here is the question from the user:
+                Please reply in Thai, using markdown format, with structured bullets, tables, or ASCII diagrams if requested. Always maintain the expert architect persona.
+                
+                Project Technical Specifications:
+                ${currentProject.rawContent}
             """.trimIndent()
 
             try {
                 val responseText = GeminiApiClient.generateAnalysis(
-                    rawContent = currentProject.rawContent + "\n\nUser Question: $text",
+                    rawContent = systemContext + "\n\nUser Question: $text",
                     category = "Chat",
                     projectName = currentProject.name,
                     industry = currentProject.industry
