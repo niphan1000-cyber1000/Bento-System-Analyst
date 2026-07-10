@@ -1,7 +1,7 @@
 package com.example.network
 
 import android.util.Log
-import com.example.BuildConfig
+import com.aistudio.aisystemanalyst.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay
@@ -24,6 +24,9 @@ object GeminiApiClient {
 
     @Volatile
     var useEnterpriseGateway: Boolean = false
+
+    @Volatile
+    var enterpriseGatewayToken: String = ""
 
     private val client = OkHttpClient.Builder()
         .connectTimeout(20, TimeUnit.SECONDS)
@@ -69,12 +72,19 @@ object GeminiApiClient {
             }
             val mediaType = "application/json; charset=utf-8".toMediaType()
             val requestBody = payload.toString().toRequestBody(mediaType)
-            val request = Request.Builder()
+            
+            val requestBuilder = Request.Builder()
                 .url(enterpriseGatewayUrl)
                 .post(requestBody)
-                // In production, attach secure enterprise client token
-                .addHeader("Authorization", "Bearer eYJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.enterpriseMockToken")
-                .build()
+
+            if (enterpriseGatewayToken.isNotEmpty()) {
+                requestBuilder.addHeader("Authorization", "Bearer $enterpriseGatewayToken")
+            } else {
+                // Attach safe default mock token for sandbox demonstration if empty
+                requestBuilder.addHeader("Authorization", "Bearer enterpriseMockToken_NotConfigured")
+            }
+            
+            val request = requestBuilder.build()
 
             val textResult = retryWithBackoff(times = 2) {
                 client.newCall(request).execute().use { response ->
@@ -92,9 +102,8 @@ object GeminiApiClient {
             }
             return@withContext "Enterprise Secure Proxy Active: Dispatched through $enterpriseGatewayUrl\n\n$textResult"
         } catch (e: Exception) {
-            Log.e(TAG, "Gateway analysis call failed, running local secure processing instead", e)
-            return@withContext "Enterprise secure gateway proxy ($enterpriseGatewayUrl) is currently unreachable in sandbox. Running secure direct failover below...\n\n" +
-                    generateAnalysisDirect(rawContent, category, projectName, industry)
+            Log.e(TAG, "Gateway analysis call failed", e)
+            throw Exception("Enterprise Gateway Call Failed: ไม่สามารถเชื่อมต่อกับ Enterprise Secure Proxy ($enterpriseGatewayUrl) ได้ในขณะนี้\n\nรายละเอียดความล้มเหลว: ${e.localizedMessage ?: "Connection Timeout"}\n\n*ระบบความปลอดภัยแบบ Zero-Trust ถูกเปิดใช้งาน: ไม่ทำการ Fallback ไปยิง API โดยตรงจากเครื่อง Client เพื่อป้องกันข้อมูลของแอปพลิเคชันรั่วไหล*")
         }
     }
 
@@ -107,7 +116,7 @@ object GeminiApiClient {
         val apiKey = BuildConfig.GEMINI_API_KEY
         if (apiKey.isEmpty() || apiKey == "MY_GEMINI_API_KEY") {
             Log.e(TAG, "API Key is empty or placeholder!")
-            return@withContext getOfflineMockAnalysis(category, projectName, industry, rawContent)
+            throw Exception("ไม่พบคีย์การเข้าถึงบริการวิเคราะห์: กรุณาตั้งค่าคีย์ API 'GEMINI_API_KEY' ในแผง Secrets ของ AI Studio หรือไฟล์คอนฟิกูเรชัน .env ให้ถูกต้องเพื่อวิเคราะห์ข้อมูลจริง หรือเปิดใช้งานโหมด Enterprise Secure Gateway ด้านบนแทน")
         }
 
         val prompt = buildPromptForCategory(category, rawContent, projectName, industry)

@@ -10,8 +10,8 @@ plugins {
 }
 
 android {
-  namespace = "com.example"
-  compileSdk { version = release(36) { minorApiLevel = 1 } }
+  namespace = "com.aistudio.aisystemanalyst"
+  compileSdk = 36
 
   defaultConfig {
     applicationId = "com.aistudio.aisystemanalyst.gxzrmo"
@@ -26,10 +26,20 @@ android {
   signingConfigs {
     create("release") {
       val keystorePath = System.getenv("KEYSTORE_PATH") ?: "${rootDir}/my-upload-key.jks"
-      storeFile = file(keystorePath)
-      storePassword = System.getenv("STORE_PASSWORD")
-      keyAlias = "upload"
-      keyPassword = System.getenv("KEY_PASSWORD")
+      val pathStr = keystorePath
+      val kFile = file(pathStr)
+      if (kFile.exists()) {
+        storeFile = kFile
+        storePassword = System.getenv("STORE_PASSWORD") ?: "android"
+        keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
+        keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
+      } else {
+        // Fallback to debug keystore for sandbox/local release builds when upload key is not present
+        storeFile = file("${rootDir}/debug.keystore")
+        storePassword = "android"
+        keyAlias = "androiddebugkey"
+        keyPassword = "android"
+      }
     }
     create("debugConfig") {
       storeFile = file("${rootDir}/debug.keystore")

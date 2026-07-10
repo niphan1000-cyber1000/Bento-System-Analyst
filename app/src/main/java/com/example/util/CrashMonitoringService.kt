@@ -1,11 +1,16 @@
 package com.example.util
 
+import android.app.Activity
+import android.app.Application
 import android.content.Context
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import org.json.JSONArray
+import org.json.JSONObject
 import java.io.PrintWriter
 import java.io.StringWriter
 import java.net.HttpURLConnection
@@ -48,10 +53,39 @@ class CrashMonitoringService(private val context: Context) {
     )
     val performanceMetrics: StateFlow<PerformanceMetrics> = _performanceMetrics.asStateFlow()
 
+    @Volatile
+    private var isAppInForeground = false
+
     init {
+        setupForegroundTracking()
         loadStoredCrashes()
         setupUncaughtExceptionHandler()
         startPeriodicPerformanceMonitoring()
+    }
+
+    private fun setupForegroundTracking() {
+        val app = context.applicationContext as? Application
+        app?.registerActivityLifecycleCallbacks(object : Application.ActivityLifecycleCallbacks {
+            private var startedActivities = 0
+
+            override fun onActivityStarted(activity: Activity) {
+                startedActivities++
+                isAppInForeground = startedActivities > 0
+                Log.d(TAG, "Activity started: $activity, App in foreground: $isAppInForeground")
+            }
+
+            override fun onActivityStopped(activity: Activity) {
+                startedActivities--
+                isAppInForeground = startedActivities > 0
+                Log.d(TAG, "Activity stopped: $activity, App in foreground: $isAppInForeground")
+            }
+
+            override fun onActivityCreated(activity: Activity, savedInstanceState: Bundle?) {}
+            override fun onActivityResumed(activity: Activity) {}
+            override fun onActivityPaused(activity: Activity) {}
+            override fun onActivitySaveInstanceState(activity: Activity, outState: Bundle) {}
+            override fun onActivityDestroyed(activity: Activity) {}
+        })
     }
 
     private fun setupUncaughtExceptionHandler() {
@@ -99,32 +133,47 @@ class CrashMonitoringService(private val context: Context) {
 
     private fun saveCrashesToPrefs(list: List<CrashLog>) {
         val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        val serialized = list.joinToString("##CRASH##") { crash ->
-            "${crash.timestamp}|${crash.exceptionName}|${crash.errorMessage}|${crash.stackTrace.replace("\n", "##LINE##")}|${crash.deviceModel}|${crash.androidVersion}"
+        try {
+            val jsonArray = JSONArray()
+            for (crash in list) {
+                val obj = JSONObject().apply {
+                    put("timestamp", crash.timestamp)
+                    put("exceptionName", crash.exceptionName)
+                    put("errorMessage", crash.errorMessage)
+                    put("stackTrace", crash.stackTrace)
+                    put("deviceModel", crash.deviceModel)
+                    put("androidVersion", crash.androidVersion)
+                }
+                jsonArray.put(obj)
+            }
+            sp.edit().putString(KEY_CRASHES, jsonArray.toString()).apply()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to serialize crash logs to JSON", e)
         }
-        sp.edit().putString(KEY_CRASHES, serialized).apply()
     }
 
     private fun loadStoredCrashes() {
         val sp = context.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         val serialized = sp.getString(KEY_CRASHES, null) ?: return
         try {
-            val list = serialized.split("##CRASH##")
-                .filter { it.isNotEmpty() }
-                .map { item ->
-                    val parts = item.split("|")
+            val jsonArray = JSONArray(serialized)
+            val list = mutableListOf<CrashLog>()
+            for (i in 0 until jsonArray.length()) {
+                val obj = jsonArray.getJSONObject(i)
+                list.add(
                     CrashLog(
-                        timestamp = parts[0].toLong(),
-                        exceptionName = parts[1],
-                        errorMessage = parts[2],
-                        stackTrace = parts[3].replace("##LINE##", "\n"),
-                        deviceModel = parts[4],
-                        androidVersion = parts[5]
+                        timestamp = obj.getLong("timestamp"),
+                        exceptionName = obj.getString("exceptionName"),
+                        errorMessage = obj.getString("errorMessage"),
+                        stackTrace = obj.getString("stackTrace"),
+                        deviceModel = obj.getString("deviceModel"),
+                        androidVersion = obj.getString("androidVersion")
                     )
-                }
+                )
+            }
             _crashes.value = list
         } catch (e: Exception) {
-            Log.e(TAG, "Error loading crash histories: ", e)
+            Log.e(TAG, "Error loading crash histories via JSON: ", e)
         }
     }
 
@@ -132,23 +181,24 @@ class CrashMonitoringService(private val context: Context) {
         thread(start = true, isDaemon = true) {
             while (true) {
                 try {
-                    val runtime = Runtime.getRuntime()
-                    val maxMem = runtime.maxMemory() / (1024 * 1024)
-                    val totalMem = runtime.totalMemory() / (1024 * 1024)
-                    val freeMem = runtime.freeMemory() / (1024 * 1024)
-                    val usedMem = totalMem - freeMem
+                    if (isAppInForeground) {
+                        val runtime = Runtime.getRuntime()
+                        val maxMem = runtime.maxMemory() / (1024 * 1024)
+                        val totalMem = runtime.totalMemory() / (1024 * 1024)
+                        val freeMem = runtime.freeMemory() / (1024 * 1024)
+                        val usedMem = totalMem - freeMem
 
-                    val activeCount = Thread.activeCount()
-                    val ping = testGatewayLatency()
+                        val activeCount = Thread.activeCount()
+                        val ping = testGatewayLatency()
 
-                    _performanceMetrics.value = PerformanceMetrics(
-                        usedMemoryMb = usedMem,
-                        totalMemoryMb = totalMem,
-                        maxMemoryMb = maxMem,
-                        activeThreads = activeCount,
-                        networkLatencyMs = ping
-                    )
-                    
+                        _performanceMetrics.value = PerformanceMetrics(
+                            usedMemoryMb = usedMem,
+                            totalMemoryMb = totalMem,
+                            maxMemoryMb = maxMem,
+                            activeThreads = activeCount,
+                            networkLatencyMs = ping
+                        )
+                    }
                     Thread.sleep(3000) // update every 3 seconds
                 } catch (e: Exception) {
                     Log.e(TAG, "Error during metrics monitor cycle", e)

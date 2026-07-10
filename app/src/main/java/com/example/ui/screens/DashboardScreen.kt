@@ -213,7 +213,9 @@ fun DashboardScreen(viewModel: AppViewModel, paddingValues: PaddingValues) {
             Spacer(modifier = Modifier.height(24.dp))
             val useEnterpriseGateway by viewModel.useEnterpriseGateway.collectAsState()
             val enterpriseGatewayUrl by viewModel.enterpriseGatewayUrl.collectAsState()
+            val enterpriseGatewayToken by viewModel.enterpriseGatewayToken.collectAsState()
             var gatewayInput by remember(enterpriseGatewayUrl) { mutableStateOf(enterpriseGatewayUrl) }
+            var tokenInput by remember(enterpriseGatewayToken) { mutableStateOf(enterpriseGatewayToken) }
 
             Card(
                 modifier = Modifier
@@ -267,35 +269,50 @@ fun DashboardScreen(viewModel: AppViewModel, paddingValues: PaddingValues) {
 
                     if (useEnterpriseGateway) {
                         Text(
-                            text = "ความปลอดภัยระดับสูง: คีย์ API จะถูกเก็บรักษาไว้อย่างปลอดภัยบนฝั่งเซิร์ฟเวอร์หลังบ้าน (FastAPI/Spring) ตัวแอปจะเรียก AI ผ่าน Gateway เท่านั้น",
+                            text = "ระบบความปลอดภัย Zero-Trust: คีย์ API จะถูกเก็บรักษาไว้อย่างปลอดภัยบนเซิร์ฟเวอร์หลักเท่านั้น (ไม่มีการเก็บไว้ใน APK) หากเซิร์ฟเวอร์มีปัญหาระบบจะหยุดทำงานพร้อมแจ้งเตือนโดยไม่มีการ Fallback เพื่อป้องกันความปลอดภัยคีย์",
                             fontSize = 11.sp,
                             color = Slate100,
                             lineHeight = 16.sp
                         )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            OutlinedTextField(
-                                value = gatewayInput,
-                                onValueChange = {
-                                    gatewayInput = it
-                                    viewModel.setEnterpriseGatewayUrl(it)
-                                },
-                                label = { Text("ที่อยู่ API Gateway (Backend URL)", fontSize = 11.sp) },
-                                singleLine = true,
-                                textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, color = Color.White),
-                                modifier = Modifier.weight(1f),
-                                colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = PrimaryLightBlue,
-                                    unfocusedBorderColor = Slate700,
-                                    focusedLabelColor = PrimaryLightBlue,
-                                    unfocusedLabelColor = Slate500
-                                )
+                        Spacer(modifier = Modifier.height(14.dp))
+                        
+                        OutlinedTextField(
+                            value = gatewayInput,
+                            onValueChange = {
+                                gatewayInput = it
+                                viewModel.setEnterpriseGatewayUrl(it)
+                            },
+                            label = { Text("ที่อยู่ API Gateway (Backend URL)", fontSize = 11.sp) },
+                            singleLine = true,
+                            textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, color = Color.White),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryLightBlue,
+                                unfocusedBorderColor = Slate700,
+                                focusedLabelColor = PrimaryLightBlue,
+                                unfocusedLabelColor = Slate500
                             )
-                        }
+                        )
+
+                        Spacer(modifier = Modifier.height(10.dp))
+
+                        OutlinedTextField(
+                            value = tokenInput,
+                            onValueChange = {
+                                tokenInput = it
+                                viewModel.setEnterpriseGatewayToken(it)
+                            },
+                            label = { Text("โทเค็นรับสิทธิ์ฝั่งเกตเวย์หลังบ้าน (Authorization Bearer Token)", fontSize = 11.sp) },
+                            singleLine = true,
+                            textStyle = LocalTextStyle.current.copy(fontSize = 12.sp, color = Color.White),
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = PrimaryLightBlue,
+                                unfocusedBorderColor = Slate700,
+                                focusedLabelColor = PrimaryLightBlue,
+                                unfocusedLabelColor = Slate500
+                            )
+                        )
                     } else {
                         Text(
                             text = "โหมดแซนด์บอกซ์ (Sandbox Prototyping): แอปพลิเคชันส่งคำขอไปยัง Gemini API โดยตรงผ่าน Client SDK (คีย์ API ถูกเก็บในแอสเซทจำลอง / ค่ากำหนดท้องถิ่น)",

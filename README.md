@@ -1,21 +1,41 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://ai.google.dev/static/site-assets/images/share-ais-513315318.png" />
-</div>
+# Bento System Analyst (AI-Powered Enterprise System Analyst & Telemetry Platform)
 
-# Run and deploy your AI Studio app
+Bento System Analyst is a professional, enterprise-grade Android application developed with modern Jetpack Compose and Kotlin. It serves as an elite AI-powered System Analyst, Security Auditor, and Architect. It automatically scans technical specifications, identifies security loopholes, designs ER diagrams, visualizes cloud topologies, and audits developer and operator actions.
 
-This contains everything you need to run your app locally.
+## 🌟 Key Features
 
-View your app in AI Studio: https://ai.studio/apps/0f5a1f23-644c-4c8a-8f7f-c3e458ea6b48
+### 1. Multi-Dimensional AI Analysis (Zero-Trust Security)
+- **Comprehensive Scans:** Automatically reviews requirements, business logic, system architecture, database design (ERD), API endpoints, OWASP security threats, and cloud infrastructure topologies.
+- **Enterprise Secure Proxy (Gateway):** Run analysis securely without exposing sensitive client-side API keys. When configured, traffic is dispatched exclusively through the backend API gateway.
+- **Direct Sandbox Mode:** Client-to-Gemini SDK prototyping for sandbox environments, featuring robust alert handling if the API key is not configured.
 
-## Run Locally
+### 2. Live Telemetry & Real-Time Performance Audits
+- **System Telemetry:** Real-time JVM memory tracking, active thread monitoring, and secure gateway ping verification.
+- **Lifecycle-Bound Loops:** Periodic telemetry monitoring automatically suspends when the application enters the background to conserve device battery and cellular data.
 
-**Prerequisites:**  [Android Studio](https://developer.android.com/studio)
+### 3. Bulletproof Error & Crash Monitoring
+- **JSON Serialization:** Crash logs are serialized safely using native Android JSON libraries to prevent injection or corruption.
+- **Robust Exception Interceptor:** Captures unhandled runtime crashes and records detailed device metadata, stack traces, and active exception states.
 
+## 🛠️ Tech Stack & Architecture
 
-1. Open Android Studio
-2. Select **Open** and choose the directory containing this project
-3. Allow Android Studio to fix any incompatibilities as it imports the project.
-4. Create a file named `.env` in the project directory and set `GEMINI_API_KEY` in that file to your Gemini API key (see `.env.example` for an example)
-5. Remove this line from the app's `build.gradle.kts` file: `signingConfig = signingConfigs.getByName("debugConfig")`
-6. Run the app on an emulator or physical device
+- **UI Framework:** Jetpack Compose (100%)
+- **Architecture:** Clean MVVM with Single Source of Truth
+- **Database:** SQLite Local Room Database with Coroutines Flow
+- **Dependency Management:** Version Catalog (`libs.versions.toml`) & Gradle Kotlin DSL
+- **Compilation Platform:** Android 13+ (Target SDK 36, Compile SDK 36)
+
+## 🔑 Configuration & Setup
+
+### AI Studio Secrets Panel
+To enable direct sandbox analysis, configure your credentials in the **Secrets panel** of your AI Studio editor:
+```env
+GEMINI_API_KEY=your_actual_gemini_api_key
+```
+
+### Local Prototyping
+You can copy `.env.example` to `.env` in the root directory and define:
+```env
+GEMINI_API_KEY=your_actual_gemini_api_key
+```
+The Secrets Gradle Plugin automatically reads and injects this key into `BuildConfig` at compile-time.

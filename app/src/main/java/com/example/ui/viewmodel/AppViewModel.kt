@@ -97,6 +97,9 @@ class AppViewModel(
     private val _enterpriseGatewayUrl = MutableStateFlow(GeminiApiClient.enterpriseGatewayUrl)
     val enterpriseGatewayUrl: StateFlow<String> = _enterpriseGatewayUrl.asStateFlow()
 
+    private val _enterpriseGatewayToken = MutableStateFlow(GeminiApiClient.enterpriseGatewayToken)
+    val enterpriseGatewayToken: StateFlow<String> = _enterpriseGatewayToken.asStateFlow()
+
     fun setUseEnterpriseGateway(enabled: Boolean) {
         _useEnterpriseGateway.value = enabled
         GeminiApiClient.useEnterpriseGateway = enabled
@@ -111,6 +114,12 @@ class AppViewModel(
             _enterpriseGatewayUrl.value = trimmed
             GeminiApiClient.enterpriseGatewayUrl = trimmed
         }
+    }
+
+    fun setEnterpriseGatewayToken(token: String) {
+        val trimmed = token.trim()
+        _enterpriseGatewayToken.value = trimmed
+        GeminiApiClient.enterpriseGatewayToken = trimmed
     }
 
     // Auth & Role Simulation State
@@ -413,6 +422,24 @@ class AppViewModel(
                 val finalStatusMap = _analysisStatus.value.toMutableMap()
                 finalStatusMap[category] = "Failed"
                 _analysisStatus.value = finalStatusMap
+
+                // Save error details to the project report so it renders beautifully in the UI
+                val errorMsg = "### ❌ การวิเคราะห์ล้มเหลว (Analysis Failed)\n\n**เหตุผลความล้มเหลว:**\n${e.message ?: "ข้อผิดพลาดที่ไม่รู้จัก (Unknown Error)"}\n\n*โปรดตรวจสอบการกำหนดค่าความปลอดภัยหรือ API Gateway ของท่าน*"
+                val updatedProject = when (category) {
+                    "Requirements" -> project.copy(requirementsReport = errorMsg)
+                    "Business" -> project.copy(businessReport = errorMsg)
+                    "System" -> project.copy(systemReport = errorMsg)
+                    "Database" -> project.copy(databaseReport = errorMsg)
+                    "API" -> project.copy(apiReport = errorMsg)
+                    "Security" -> project.copy(securityReport = errorMsg)
+                    "Performance" -> project.copy(performanceReport = errorMsg)
+                    "Code" -> project.copy(codeReport = errorMsg)
+                    "Infrastructure" -> project.copy(infraReport = errorMsg)
+                    "Risk" -> project.copy(riskReport = errorMsg)
+                    else -> project
+                }
+                _selectedProject.value = updatedProject
+                addNotification("การวิเคราะห์ด้าน $category ล้มเหลว: ${e.message ?: "ข้อผิดพลาดที่ไม่รู้จัก"}")
             }
         }
     }
