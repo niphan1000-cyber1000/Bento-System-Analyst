@@ -10,11 +10,11 @@ plugins {
 }
 
 android {
-  namespace = "com.example"
+  namespace = "com.aistudio.aisystemanalyst"
   compileSdk = 36
 
   defaultConfig {
-    applicationId = "com.aistudio.aisystemanalyst.gxzrmo"
+    applicationId = "com.aistudio.aisystemanalyst"
     minSdk = 24
     targetSdk = 36
     versionCode = 1

@@ -1,7 +1,7 @@
-package com.example
+package com.aistudio.aisystemanalyst
 
 import android.app.Application
-import com.example.di.appModule
+import com.aistudio.aisystemanalyst.di.appModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin

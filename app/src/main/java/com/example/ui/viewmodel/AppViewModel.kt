@@ -1,16 +1,16 @@
-package com.example.ui.viewmodel
+package com.aistudio.aisystemanalyst.ui.viewmodel
 
 import android.app.Application
 import android.util.Log
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.data.local.AppDatabase
-import com.example.data.model.AuditLog
-import com.example.data.model.Project
-import com.example.data.model.ProjectTask
-import com.example.data.model.RiskItem
-import com.example.data.repository.ProjectRepository
-import com.example.network.GeminiApiClient
+import com.aistudio.aisystemanalyst.data.local.AppDatabase
+import com.aistudio.aisystemanalyst.data.model.AuditLog
+import com.aistudio.aisystemanalyst.data.model.Project
+import com.aistudio.aisystemanalyst.data.model.ProjectTask
+import com.aistudio.aisystemanalyst.data.model.RiskItem
+import com.aistudio.aisystemanalyst.data.repository.ProjectRepository
+import com.aistudio.aisystemanalyst.network.GeminiApiClient
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
@@ -36,15 +36,15 @@ data class ChatMessage(
 class AppViewModel(
     application: Application,
     private val repository: ProjectRepository,
-    private val crashService: com.example.util.CrashMonitoringService
+    private val crashService: com.aistudio.aisystemanalyst.util.CrashMonitoringService
 ) : AndroidViewModel(application) {
 
     val projects: StateFlow<List<Project>>
     val auditLogs: StateFlow<List<AuditLog>>
 
     // Uncaught Crash Monitoring & App Telemetry Status Flows
-    val systemCrashes: StateFlow<List<com.example.util.CrashLog>> = crashService.crashes
-    val performanceMetrics: StateFlow<com.example.util.PerformanceMetrics> = crashService.performanceMetrics
+    val systemCrashes: StateFlow<List<com.aistudio.aisystemanalyst.util.CrashLog>> = crashService.crashes
+    val performanceMetrics: StateFlow<com.aistudio.aisystemanalyst.util.PerformanceMetrics> = crashService.performanceMetrics
 
     fun clearCrashReports() {
         crashService.clearCrashes()
@@ -161,9 +161,9 @@ class AppViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             val defaultUser = repository.getUserByEmail("demo@enterprise.com")
             if (defaultUser == null) {
-                val salt = com.example.util.HashUtils.generateSalt()
-                val hashedPassword = com.example.util.HashUtils.hashPassword("password123", salt)
-                repository.insertUser(com.example.data.model.User(
+                val salt = com.aistudio.aisystemanalyst.util.HashUtils.generateSalt()
+                val hashedPassword = com.aistudio.aisystemanalyst.util.HashUtils.hashPassword("password123", salt)
+                repository.insertUser(com.aistudio.aisystemanalyst.data.model.User(
                     email = "demo@enterprise.com",
                     passwordHash = hashedPassword,
                     salt = salt,
@@ -225,7 +225,7 @@ class AppViewModel(
             val isMatch = if (user.salt.isEmpty()) {
                 user.passwordHash == passwordEntered
             } else {
-                val hashedCompare = com.example.util.HashUtils.hashPassword(passwordEntered, user.salt)
+                val hashedCompare = com.aistudio.aisystemanalyst.util.HashUtils.hashPassword(passwordEntered, user.salt)
                 user.passwordHash == hashedCompare
             }
 
@@ -260,10 +260,10 @@ class AppViewModel(
             }
 
             // Secure Hashing with dynamic salt per user
-            val salt = com.example.util.HashUtils.generateSalt()
-            val hashedPassword = com.example.util.HashUtils.hashPassword(passwordEntered, salt)
+            val salt = com.aistudio.aisystemanalyst.util.HashUtils.generateSalt()
+            val hashedPassword = com.aistudio.aisystemanalyst.util.HashUtils.hashPassword(passwordEntered, salt)
 
-            val newUser = com.example.data.model.User(
+            val newUser = com.aistudio.aisystemanalyst.data.model.User(
                 email = emailClean,
                 passwordHash = hashedPassword,
                 salt = salt,

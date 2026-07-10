@@ -1,4 +1,4 @@
-package com.example.ui.screens
+package com.aistudio.aisystemanalyst.ui.screens
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -38,18 +38,18 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.AccentIndigo
-import com.example.ui.theme.AccentRose
-import com.example.ui.theme.BentoCardBg
-import com.example.ui.theme.BentoCardBorder
-import com.example.ui.theme.BentoIndigo
-import com.example.ui.theme.PrimaryLightBlue
-import com.example.ui.theme.Slate100
-import com.example.ui.theme.Slate500
-import com.example.ui.theme.Slate700
-import com.example.ui.theme.Slate800
-import com.example.ui.theme.Slate900
-import com.example.ui.viewmodel.AppViewModel
+import com.aistudio.aisystemanalyst.ui.theme.AccentIndigo
+import com.aistudio.aisystemanalyst.ui.theme.AccentRose
+import com.aistudio.aisystemanalyst.ui.theme.BentoCardBg
+import com.aistudio.aisystemanalyst.ui.theme.BentoCardBorder
+import com.aistudio.aisystemanalyst.ui.theme.BentoIndigo
+import com.aistudio.aisystemanalyst.ui.theme.PrimaryLightBlue
+import com.aistudio.aisystemanalyst.ui.theme.Slate100
+import com.aistudio.aisystemanalyst.ui.theme.Slate500
+import com.aistudio.aisystemanalyst.ui.theme.Slate700
+import com.aistudio.aisystemanalyst.ui.theme.Slate800
+import com.aistudio.aisystemanalyst.ui.theme.Slate900
+import com.aistudio.aisystemanalyst.ui.viewmodel.AppViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale

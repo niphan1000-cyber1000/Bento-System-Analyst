@@ -1,7 +1,7 @@
-package com.example.network
+package com.aistudio.aisystemanalyst.network
 
 import android.util.Log
-import com.example.BuildConfig
+import com.aistudio.aisystemanalyst.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.delay

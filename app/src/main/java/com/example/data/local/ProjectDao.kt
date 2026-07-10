@@ -1,10 +1,10 @@
-package com.example.data.local
+package com.aistudio.aisystemanalyst.data.local
 
 import androidx.room.*
-import com.example.data.model.AuditLog
-import com.example.data.model.Project
-import com.example.data.model.ProjectTask
-import com.example.data.model.RiskItem
+import com.aistudio.aisystemanalyst.data.model.AuditLog
+import com.aistudio.aisystemanalyst.data.model.Project
+import com.aistudio.aisystemanalyst.data.model.ProjectTask
+import com.aistudio.aisystemanalyst.data.model.RiskItem
 import kotlinx.coroutines.flow.Flow
 
 @Dao
@@ -55,8 +55,8 @@ interface ProjectDao {
     suspend fun insertAuditLog(log: AuditLog)
 
     @Query("SELECT * FROM users WHERE email = :email")
-    suspend fun getUserByEmail(email: String): com.example.data.model.User?
+    suspend fun getUserByEmail(email: String): com.aistudio.aisystemanalyst.data.model.User?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insertUser(user: com.example.data.model.User): Long
+    suspend fun insertUser(user: com.aistudio.aisystemanalyst.data.model.User): Long
 }

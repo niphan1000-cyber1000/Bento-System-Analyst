@@ -1,4 +1,4 @@
-package com.example.ui.screens
+package com.aistudio.aisystemanalyst.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.animation.core.tween
@@ -28,8 +28,8 @@ import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.theme.*
-import com.example.ui.viewmodel.AppViewModel
+import com.aistudio.aisystemanalyst.ui.theme.*
+import com.aistudio.aisystemanalyst.ui.viewmodel.AppViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

@@ -1,19 +1,19 @@
-package com.example.data.local
+package com.aistudio.aisystemanalyst.data.local
 
 import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import com.example.data.model.AuditLog
-import com.example.data.model.Project
-import com.example.data.model.ProjectTask
-import com.example.data.model.RiskItem
+import com.aistudio.aisystemanalyst.data.model.AuditLog
+import com.aistudio.aisystemanalyst.data.model.Project
+import com.aistudio.aisystemanalyst.data.model.ProjectTask
+import com.aistudio.aisystemanalyst.data.model.RiskItem
 
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
 @Database(
-    entities = [Project::class, ProjectTask::class, RiskItem::class, AuditLog::class, com.example.data.model.User::class],
+    entities = [Project::class, ProjectTask::class, RiskItem::class, AuditLog::class, com.aistudio.aisystemanalyst.data.model.User::class],
     version = 3,
     exportSchema = false
 )

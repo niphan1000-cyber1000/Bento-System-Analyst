@@ -1,4 +1,4 @@
-package com.example
+package com.aistudio.aisystemanalyst
 
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -26,10 +26,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.ui.screens.*
-import com.example.ui.theme.*
-import com.example.ui.viewmodel.AppViewModel
-import com.example.ui.viewmodel.Screen
+import com.aistudio.aisystemanalyst.ui.screens.*
+import com.aistudio.aisystemanalyst.ui.theme.*
+import com.aistudio.aisystemanalyst.ui.viewmodel.AppViewModel
+import com.aistudio.aisystemanalyst.ui.viewmodel.Screen
 import kotlinx.coroutines.launch
 import org.koin.androidx.compose.koinViewModel
 

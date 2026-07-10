@@ -1,10 +1,10 @@
-package com.example.data.repository
+package com.aistudio.aisystemanalyst.data.repository
 
-import com.example.data.local.ProjectDao
-import com.example.data.model.AuditLog
-import com.example.data.model.Project
-import com.example.data.model.ProjectTask
-import com.example.data.model.RiskItem
+import com.aistudio.aisystemanalyst.data.local.ProjectDao
+import com.aistudio.aisystemanalyst.data.model.AuditLog
+import com.aistudio.aisystemanalyst.data.model.Project
+import com.aistudio.aisystemanalyst.data.model.ProjectTask
+import com.aistudio.aisystemanalyst.data.model.RiskItem
 import kotlinx.coroutines.flow.Flow
 
 class ProjectRepository(private val projectDao: ProjectDao) {
@@ -68,11 +68,11 @@ class ProjectRepository(private val projectDao: ProjectDao) {
         projectDao.insertAuditLog(auditLog)
     }
 
-    suspend fun getUserByEmail(email: String): com.example.data.model.User? {
+    suspend fun getUserByEmail(email: String): com.aistudio.aisystemanalyst.data.model.User? {
         return projectDao.getUserByEmail(email)
     }
 
-    suspend fun insertUser(user: com.example.data.model.User): Long {
+    suspend fun insertUser(user: com.aistudio.aisystemanalyst.data.model.User): Long {
         return projectDao.insertUser(user)
     }
 }

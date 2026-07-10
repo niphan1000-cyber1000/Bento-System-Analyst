@@ -1,4 +1,4 @@
-package com.example.ui.screens
+package com.aistudio.aisystemanalyst.ui.screens
 
 import androidx.compose.foundation.*
 import androidx.compose.foundation.layout.*
@@ -18,10 +18,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.model.ProjectTask
-import com.example.data.model.RiskItem
-import com.example.ui.theme.*
-import com.example.ui.viewmodel.AppViewModel
+import com.aistudio.aisystemanalyst.data.model.ProjectTask
+import com.aistudio.aisystemanalyst.data.model.RiskItem
+import com.aistudio.aisystemanalyst.ui.theme.*
+import com.aistudio.aisystemanalyst.ui.viewmodel.AppViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable

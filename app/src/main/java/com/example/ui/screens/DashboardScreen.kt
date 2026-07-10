@@ -1,4 +1,4 @@
-package com.example.ui.screens
+package com.aistudio.aisystemanalyst.ui.screens
 
 import androidx.compose.animation.*
 import androidx.compose.foundation.BorderStroke
@@ -28,10 +28,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.data.model.Project
-import com.example.ui.theme.*
-import com.example.ui.viewmodel.AppViewModel
-import com.example.ui.viewmodel.Screen
+import com.aistudio.aisystemanalyst.data.model.Project
+import com.aistudio.aisystemanalyst.ui.theme.*
+import com.aistudio.aisystemanalyst.ui.viewmodel.AppViewModel
+import com.aistudio.aisystemanalyst.ui.viewmodel.Screen
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
