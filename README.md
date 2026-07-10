@@ -33,7 +33,7 @@ For rapid evaluation and testing, the application automatically seeds an enterpr
 - **Email:** `demo@enterprise.com`
 - **Password:** `password123`
 
-*(Alternatively, you can create a new profile instantly using the **Register (ลงทะเบียน)** link on the Login Screen.)*
+*(Alternatively, you can create a new profile instantly using the **"ลงทะเบียนสร้างบัญชี"** button on the Login Screen.)*
 
 ---
 
@@ -85,7 +85,7 @@ To generate production-ready signed APKs or AABs, the build system checks for th
 ## 🌐 Enterprise Secure Proxy (Gateway) Configuration
 
 On the **Dashboard (แผงควบคุม)** screen, enterprise operators can bypass local API key injection by routing requirements and security scans through an internal secure proxy gateway:
-1. **Enable Proxy:** Toggle the **ใช้งาน Enterprise Secure Gateway** switch.
-2. **Define Endpoint:** Provide your internal endpoint in the **ที่อยู่ API Gateway (Backend URL)** field (defaults to `https://gateway.enterprise-analyst.ai/v1/analyze`).
-3. **Set Credentials:** Input your Bearer token in the **Bearer Token** field.
+1. **Enable Proxy:** Toggle the **"เส้นทางการเรียก AI (Enterprise Routing)"** switch.
+2. **Define Endpoint:** Provide your internal endpoint in the **"ที่อยู่ API Gateway (Backend URL)"** field (defaults to `https://gateway.enterprise-analyst.ai/v1/analyze`).
+3. **Set Credentials:** Input your Bearer token in the **"โทเค็นรับสิทธิ์ฝั่งเกตเวย์หลังบ้าน (Authorization Bearer Token)"** field.
 When active, client-side requests are dispatched exclusively to the secure proxy server, appending the Bearer token in the `Authorization: Bearer <token>` header, enforcing Zero-Trust credential security.
