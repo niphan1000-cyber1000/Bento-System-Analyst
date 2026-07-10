@@ -10,7 +10,7 @@ plugins {
 }
 
 android {
-  namespace = "com.aistudio.aisystemanalyst"
+  namespace = "com.example"
   compileSdk = 36
 
   defaultConfig {
@@ -34,7 +34,12 @@ android {
         keyAlias = System.getenv("KEY_ALIAS") ?: "upload"
         keyPassword = System.getenv("KEY_PASSWORD") ?: "android"
       } else {
-        // Fallback to debug keystore for sandbox/local release builds when upload key is not present
+        // Only throw error (fail-fast) if the user is actively building a release build
+        val isReleaseRequested = gradle.startParameter.taskNames.any { it.contains("Release", ignoreCase = true) }
+        if (isReleaseRequested) {
+          throw IllegalArgumentException("Release keystore file not found at: ${kFile.absolutePath}. Please configure KEYSTORE_PATH, STORE_PASSWORD, and KEY_PASSWORD environment variables for release signing.")
+        }
+        // Fallback to debug keystore for safe sandbox/local development sync so configuration doesn't fail
         storeFile = file("${rootDir}/debug.keystore")
         storePassword = "android"
         keyAlias = "androiddebugkey"
